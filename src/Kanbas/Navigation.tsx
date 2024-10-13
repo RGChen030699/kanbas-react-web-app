@@ -1,10 +1,12 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { AiOutlineDashboard } from "react-icons/ai";
 import { IoCalendarOutline } from "react-icons/io5";
 import { LiaBookSolid, LiaCogSolid } from "react-icons/lia";
 import { FaInbox, FaRegCircleUser } from "react-icons/fa6";
 
 export default function KanbasNavigation() {
+  const location = useLocation();  // To access the current path
+
   return (
     <div
       id="wd-kanbas-navigation"
@@ -40,8 +42,8 @@ export default function KanbasNavigation() {
       <NavLink
         to="/Kanbas/Dashboard"
         id="wd-dashboard-link"
-        className={({ isActive }) =>
-          isActive
+        className={
+          location.pathname === "/Kanbas/Dashboard"
             ? "list-group-item text-center border-0 bg-white text-danger"
             : "list-group-item text-center border-0 bg-black text-white"
         }
@@ -53,10 +55,10 @@ export default function KanbasNavigation() {
 
       {/* Courses Link */}
       <NavLink
-        to="/Kanbas/Courses"
+        to="/Kanbas/Dashboard" // Still pointing to the same route as Dashboard
         id="wd-courses-link"
-        className={({ isActive }) =>
-          isActive
+        className={
+          location.pathname === "/Kanbas/Courses"
             ? "list-group-item text-center border-0 bg-white text-danger"
             : "list-group-item text-center border-0 bg-black text-white"
         }
