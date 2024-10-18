@@ -3,13 +3,19 @@ import { BsGripVertical, BsChevronDown, BsChevronUp } from "react-icons/bs";
 import GreenCheckmark from "./GreenCheckmark";
 import ModuleControlButtons from "./ModuleControlButtons";
 import LessonControlButtons from "./LessonControlButtons";
+import { useParams } from "react-router";
+import * as db from "../../Database";
 
 export default function Modules() {
-  const [showLessonsWeek1, setShowLessonsWeek1] = useState(false);
-  const [showLessonsWeek2, setShowLessonsWeek2] = useState(false);
+  const { cid } = useParams();
+  const [showLessons, setShowLessons] = useState<{[key: string]: boolean}>({});
 
-  const toggleWeek1Lessons = () => setShowLessonsWeek1(!showLessonsWeek1);
-  const toggleWeek2Lessons = () => setShowLessonsWeek2(!showLessonsWeek2);
+  const toggleLessons = (moduleId: string) => {
+    setShowLessons(prevState => ({
+      ...prevState,
+      [moduleId]: !prevState[moduleId]
+    }));
+  };
 
   const buttonStyle = {
     backgroundColor: "#6c757d",
@@ -30,15 +36,11 @@ export default function Modules() {
     cursor: "pointer",
   };
 
+  const courseModules = db.modules.filter((module: any) => module.course === cid);
+
   return (
     <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          marginBottom: "15px",
-        }}
-      >
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "15px" }}>
         <button style={buttonStyle}>Collapse All</button>
         <button style={buttonStyle}>View Progress</button>
 
@@ -54,102 +56,32 @@ export default function Modules() {
       </div>
 
       <ul id="wd-modules" className="list-group rounded-0">
-        <li className="wd-module list-group-item p-0 mb-5 fs-5 border-gray">
-          <div className="wd-title p-3 ps-2 bg-secondary d-flex align-items-center">
-            <BsGripVertical className="me-2 fs-3" />
-            <span className="flex-grow-1 d-flex align-items-center" onClick={toggleWeek1Lessons} style={{ cursor: 'pointer' }}>
-              Week 1
-              {showLessonsWeek1 ? <BsChevronUp className="ms-2" /> : <BsChevronDown className="ms-2" />}
-            </span>
-            <ModuleControlButtons />
-          </div>
-          {showLessonsWeek1 && (
-            <ul className="wd-lessons list-group rounded-0">
-              <li className="wd-lesson list-group-item p-3 ps-1 d-flex align-items-center">
-                <BsGripVertical className="me-2 fs-3" />
-                <span className="d-flex align-items-center me-2">
-                  <GreenCheckmark />
-                </span>
-                <span className="flex-grow-1">LEARNING OBJECTIVES</span>
-                <LessonControlButtons />
-              </li>
-              <li className="wd-lesson list-group-item p-3 ps-1 d-flex align-items-center">
-                <BsGripVertical className="me-2 fs-3" />
-                <span className="d-flex align-items-center me-2">
-                  <GreenCheckmark />
-                </span>
-                <span className="flex-grow-1">Introduction to the course</span>
-                <LessonControlButtons />
-              </li>
-              <li className="wd-lesson list-group-item p-3 ps-1 d-flex align-items-center">
-                <BsGripVertical className="me-2 fs-3" />
-                <span className="d-flex align-items-center me-2">
-                  <GreenCheckmark />
-                </span>
-                <span className="flex-grow-1">Learn what is Web Development</span>
-                <LessonControlButtons />
-              </li>
-
-              <ul className="wd-lessons list-group rounded-0" style={{ paddingLeft: "0" }}>
-                <li className="wd-lesson list-group-item p-3 ps-1 d-flex align-items-center">
-                  <BsGripVertical className="me-2 fs-3" />
-                  <span className="d-flex align-items-center me-2">
-                    <GreenCheckmark />
-                  </span>
-                  <span className="flex-grow-1">LESSON 1</span>
-                  <LessonControlButtons />
-                </li>
-                <li className="wd-lesson list-group-item p-3 ps-1 d-flex align-items-center">
-                  <BsGripVertical className="me-2 fs-3" />
-                  <span className="d-flex align-items-center me-2">
-                    <GreenCheckmark />
-                  </span>
-                  <span className="flex-grow-1">LESSON 2</span>
-                  <LessonControlButtons />
-                </li>
+        {courseModules.map((module: any) => (
+          <li key={module.id} className="wd-module list-group-item p-0 mb-5 fs-5 border-gray">
+            <div className="wd-title p-3 ps-2 bg-secondary d-flex align-items-center">
+              <BsGripVertical className="me-2 fs-3" />
+              <span className="flex-grow-1 d-flex align-items-center" onClick={() => toggleLessons(module.id)} style={{ cursor: 'pointer' }}>
+                {module.name}
+                {showLessons[module.id] ? <BsChevronUp className="ms-2" /> : <BsChevronDown className="ms-2" />}
+              </span>
+              <ModuleControlButtons />
+            </div>
+            {showLessons[module.id] && (
+              <ul className="wd-lessons list-group rounded-0">
+                {module.lessons.map((lesson: any) => (
+                  <li key={lesson.id} className="wd-lesson list-group-item p-3 ps-1 d-flex align-items-center">
+                    <BsGripVertical className="me-2 fs-3" />
+                    <span className="d-flex align-items-center me-2">
+                      <GreenCheckmark />
+                    </span>
+                    <span className="flex-grow-1">{lesson.name}</span>
+                    <LessonControlButtons />
+                  </li>
+                ))}
               </ul>
-            </ul>
-          )}
-        </li>
-
-        <li className="wd-module list-group-item p-0 mb-5 fs-5 border-gray">
-          <div className="wd-title p-3 ps-2 bg-secondary d-flex align-items-center">
-            <BsGripVertical className="me-2 fs-3" />
-            <span className="flex-grow-1 d-flex align-items-center" onClick={toggleWeek2Lessons} style={{ cursor: 'pointer' }}>
-              Week 2
-              {showLessonsWeek2 ? <BsChevronUp className="ms-2" /> : <BsChevronDown className="ms-2" />}
-            </span>
-            <ModuleControlButtons />
-          </div>
-          {showLessonsWeek2 && (
-            <ul className="wd-lessons list-group rounded-0">
-              <li className="wd-lesson list-group-item p-3 ps-1 d-flex align-items-center">
-                <BsGripVertical className="me-2 fs-3" />
-                <span className="d-flex align-items-center me-2">
-                  <GreenCheckmark />
-                </span>
-                <span className="flex-grow-1">LEARNING OBJECTIVES</span>
-                <LessonControlButtons />
-              </li>
-              <li className="wd-lesson list-group-item p-3 ps-1 d-flex align-items-center">
-                <BsGripVertical className="me-2 fs-3" />
-                <span className="d-flex align-items-center me-2">
-                  <GreenCheckmark />
-                </span>
-                <span className="flex-grow-1">LESSON 1</span>
-                <LessonControlButtons />
-              </li>
-              <li className="wd-lesson list-group-item p-3 ps-1 d-flex align-items-center">
-                <BsGripVertical className="me-2 fs-3" />
-                <span className="d-flex align-items-center me-2">
-                  <GreenCheckmark />
-                </span>
-                <span className="flex-grow-1">LESSON 2</span>
-                <LessonControlButtons />
-              </li>
-            </ul>
-          )}
-        </li>
+            )}
+          </li>
+        ))}
       </ul>
     </div>
   );

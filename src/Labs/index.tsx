@@ -6,16 +6,14 @@ import Lab3 from "./Lab3";
 
 export default function Labs() {
   return (
-    <div id="wd-labs">
-      <h1>Labs</h1>
-      <h2>Richard Chen</h2>
-      <TOC />
-      <Routes>
-        <Route path="/" element={<Navigate to="Lab2" />} />
-        <Route path="Lab1" element={<Lab1 />} />
-        <Route path="Lab2" element={<Lab2 />} />
-        <Route path="Lab3" element={<Lab3 />} />
-      </Routes>
-    </div>
-  );
-}
+   <div className="p-3">
+    <h1>Labs</h1>
+    <h2 style={{ fontWeight: "bold", fontSize: "24px" }}>Richard Chen</h2>
+    <TOC />
+    <Routes>
+     <Route path="Lab1" element={<Lab1 />} />
+     <Route path="Lab2" element={<Lab2 />} />
+     <Route path="Lab3/*" element={<Lab3 />} />
+    </Routes>
+   </div>
+ );} 

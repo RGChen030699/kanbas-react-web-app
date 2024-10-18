@@ -1,16 +1,24 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, Link, useLocation } from "react-router-dom";
 import { AiOutlineDashboard } from "react-icons/ai";
 import { IoCalendarOutline } from "react-icons/io5";
 import { LiaBookSolid, LiaCogSolid } from "react-icons/lia";
 import { FaInbox, FaRegCircleUser } from "react-icons/fa6";
 
 export default function KanbasNavigation() {
-  const location = useLocation();  // To access the current path
+  const { pathname } = useLocation();
+
+  const links = [
+    { label: "Dashboard", path: "/Kanbas/Dashboard", icon: AiOutlineDashboard },
+    { label: "Courses", path: "/Kanbas/Courses", icon: LiaBookSolid },  // Fixed Courses path
+    { label: "Calendar", path: "/Kanbas/Calendar", icon: IoCalendarOutline },
+    { label: "Inbox", path: "/Kanbas/Inbox", icon: FaInbox },
+    { label: "Labs", path: "/Labs", icon: LiaCogSolid },
+  ];
 
   return (
     <div
       id="wd-kanbas-navigation"
-      style={{ width: 110 }} // Sidebar width approximately 110px
+      style={{ width: 120 }} // Sidebar width adjustment to 120px
       className="list-group rounded-0 position-fixed bottom-0 top-0 d-none d-md-block bg-black z-2"
     >
       {/* Northeastern logo */}
@@ -24,94 +32,31 @@ export default function KanbasNavigation() {
       </a>
 
       {/* Account Link */}
-      <NavLink
+      <Link
         to="/Kanbas/Account"
-        id="wd-account-link"
-        className={({ isActive }) =>
-          isActive
-            ? "list-group-item text-center border-0 bg-white text-danger"
-            : "list-group-item text-center border-0 bg-black text-white"
-        }
+        className={`list-group-item text-center border-0 bg-black ${
+          pathname.includes("Account") ? "bg-white text-danger" : "bg-black text-white"
+        }`}
       >
-        <FaRegCircleUser className="fs-1" />
+        <FaRegCircleUser className={`fs-1 ${pathname.includes("Account") ? "text-danger" : "text-white"}`} />
         <br />
         Account
-      </NavLink>
+      </Link>
 
-      {/* Dashboard Link */}
-      <NavLink
-        to="/Kanbas/Dashboard"
-        id="wd-dashboard-link"
-        className={
-          location.pathname === "/Kanbas/Dashboard"
-            ? "list-group-item text-center border-0 bg-white text-danger"
-            : "list-group-item text-center border-0 bg-black text-white"
-        }
-      >
-        <AiOutlineDashboard className="fs-1" />
-        <br />
-        Dashboard
-      </NavLink>
-
-      {/* Courses Link */}
-      <NavLink
-        to="/Kanbas/Dashboard" // Still pointing to the same route as Dashboard
-        id="wd-courses-link"
-        className={
-          location.pathname === "/Kanbas/Courses"
-            ? "list-group-item text-center border-0 bg-white text-danger"
-            : "list-group-item text-center border-0 bg-black text-white"
-        }
-      >
-        <LiaBookSolid className="fs-1" />
-        <br />
-        Courses
-      </NavLink>
-
-      {/* Calendar Link */}
-      <NavLink
-        to="/Kanbas/Calendar"
-        id="wd-calendar-link"
-        className={({ isActive }) =>
-          isActive
-            ? "list-group-item text-center border-0 bg-white text-danger"
-            : "list-group-item text-center border-0 bg-black text-white"
-        }
-      >
-        <IoCalendarOutline className="fs-1" />
-        <br />
-        Calendar
-      </NavLink>
-
-      {/* Inbox Link */}
-      <NavLink
-        to="/Kanbas/Inbox"
-        id="wd-inbox-link"
-        className={({ isActive }) =>
-          isActive
-            ? "list-group-item text-center border-0 bg-white text-danger"
-            : "list-group-item text-center border-0 bg-black text-white"
-        }
-      >
-        <FaInbox className="fs-1" />
-        <br />
-        Inbox
-      </NavLink>
-
-      {/* Labs Link */}
-      <NavLink
-        to="/Kanbas/Labs"
-        id="wd-labs-link"
-        className={({ isActive }) =>
-          isActive
-            ? "list-group-item text-center border-0 bg-white text-danger"
-            : "list-group-item text-center border-0 bg-black text-white"
-        }
-      >
-        <LiaCogSolid className="fs-1" />
-        <br />
-        Labs
-      </NavLink>
+      {/* Dynamic Links for Dashboard, Courses, Calendar, Inbox, and Labs */}
+      {links.map((link) => (
+        <Link
+          key={link.path} // Using the link path as a unique key
+          to={link.path}
+          className={`list-group-item bg-black text-center border-0 ${
+            pathname.includes(link.label) ? "text-danger bg-white" : "text-white bg-black"
+          }`}
+        >
+          <link.icon className="fs-1" />
+          <br />
+          {link.label}
+        </Link>
+      ))}
     </div>
   );
 }
