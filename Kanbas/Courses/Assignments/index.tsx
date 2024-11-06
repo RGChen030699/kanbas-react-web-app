@@ -1,33 +1,55 @@
 import { useState } from 'react';
-import { FaSearch } from "react-icons/fa";
-import { BsPlus } from "react-icons/bs";
-import { IoEllipsisVertical } from "react-icons/io5";
-import { Dropdown } from "react-bootstrap";
-import HomeworkControlButtons from './HomeworkControlButtons';
-import { Link, useParams } from 'react-router-dom';
-import * as db from "../../Database";
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../store';
+import { useParams, useNavigate } from 'react-router-dom';
+import { FaSearch, FaCaretDown, FaCaretUp } from "react-icons/fa";
+import AssignmentControlButtons from './AssignmentControlButtons';
+import { Modal, Button } from 'react-bootstrap';
+import { deleteAssignment } from './reducer';
+import { User } from '../../Users';
 
 export default function Assignments() {
-  const { cid } = useParams();
-  const [showHomework, setShowHomework] = useState<{ [key: string]: boolean }>({});
+  const { cid } = useParams<{ cid: string }>();
+  const navigate = useNavigate();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(true);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
+  const dispatch = useDispatch();
 
-  // Toggle visibility for specific assignments
-  const toggleHomeworkVisibility = (assignmentId: string) => {
-    setShowHomework((prevState) => ({
-      ...prevState,
-      [assignmentId]: !prevState[assignmentId],
-    }));
+  const assignments = useSelector((state: RootState) =>
+    state.assignments.assignments.filter((assignment) => assignment.course === cid)
+  );
+  const currentUser = useSelector((state: RootState) => state.accountReducer.currentUser) as User | null;
+  const isFaculty = currentUser?.role === "FACULTY";
+
+  const handleAddAssignment = () => {
+    if (cid) {
+      navigate(`/Kanbas/Courses/${cid}/Assignments/new`);
+    } else {
+      console.error("Course ID is undefined");
+    }
   };
 
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
 
-  const courseAssignments = db.assignments.filter((assignment) => assignment.course === cid);
+  const handleDeleteClick = (assignmentId: string) => {
+    setSelectedAssignmentId(assignmentId);
+    setShowDeleteDialog(true);
+  };
 
-  const buttonStyle = {
-    backgroundColor: '#B22222',
-    color: 'white',
-    padding: '6px 15px',
-    borderRadius: '5px',
-    cursor: 'pointer',
+  const confirmDelete = () => {
+    if (selectedAssignmentId) {
+      dispatch(deleteAssignment(selectedAssignmentId));
+    }
+    setShowDeleteDialog(false);
+    setSelectedAssignmentId(null);
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteDialog(false);
+    setSelectedAssignmentId(null);
   };
 
   return (
@@ -37,57 +59,50 @@ export default function Assignments() {
           <span className="input-group-text bg-white">
             <FaSearch />
           </span>
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Search..."
-            aria-label="Search"
-          />
+          <input type="text" className="form-control" placeholder="Search..." aria-label="Search" />
         </div>
-
         <div className="d-flex align-items-center">
           <button className="btn btn-light border me-2">+ Group</button>
-          <button className="btn" style={buttonStyle}>+ Assignment</button>
+          {isFaculty && (
+            <button
+              className="btn"
+              style={{ backgroundColor: '#B22222', color: 'white' }}
+              onClick={handleAddAssignment}
+            >
+              + Assignment
+            </button>
+          )}
         </div>
       </div>
 
-      {courseAssignments.map((assignment) => (
-        <div key={assignment._id} id="wd-assignment" className="list-group-item p-0 mb-5 fs-5" style={{ border: '1px solid #f2f2f2' }}>
-          <div className="wd-title p-3 ps-2 d-flex align-items-center justify-content-between" style={{ backgroundColor: "#b3b8bd", border: '1px solid #f2f2f2' }}>
-            <div className="d-flex align-items-center">
-              <Dropdown>
-                <Dropdown.Toggle
-                  id={`assignment-toggle-${assignment._id}`}
-                  className="p-0"
-                  style={{ background: "none", border: "none", fontWeight: "bold", color: "black" }}
-                  onClick={() => toggleHomeworkVisibility(assignment._id)}
-                >
-                  {assignment.title}
-                </Dropdown.Toggle>
-              </Dropdown>
-            </div>
-
-            <div className="d-flex align-items-center">
-              <div className="badge bg-light text-dark" style={{ borderRadius: '20px', padding: '5px 10px', marginRight: '8px' }}>
-                {Math.floor(Math.random() * 50) + 1}% of Total
-              </div>
-              <BsPlus className="fs-4" style={{ fontSize: '20px', marginRight: '8px' }} />
-              <IoEllipsisVertical className="fs-4" style={{ fontSize: '20px' }} />
-            </div>
+      <div className="list-group-item p-0 mb-5 fs-5" style={{ border: '1px solid #ddd', backgroundColor: '#f1f1f1' }}>
+        <div
+          className="wd-title p-3 ps-2 d-flex align-items-center justify-content-between"
+          onClick={toggleDropdown}
+          style={{ cursor: 'pointer', color: 'black' }}
+        >
+          <div className="d-flex align-items-center">
+            {isDropdownOpen ? <FaCaretUp className="me-2" /> : <FaCaretDown className="me-2" />}
+            <span className="fw-bold">ASSIGNMENTS</span>
           </div>
-
-          <div style={{ padding: "15px" }}>
-            <Link
-              to={`/Kanbas/Courses/${cid}/Assignments/${assignment._id}`}
-              className="text-decoration-none text-dark"
-            >
-              View Assignment: {assignment.title}
-            </Link>
-          </div>
-
-          {showHomework[assignment._id] && <HomeworkControlButtons />}
+          <div className="badge bg-dark text-white" style={{ borderRadius: '20px', padding: '5px 10px' }}>40% of Total</div>
         </div>
-      ))}
+
+        {isDropdownOpen && (
+          <AssignmentControlButtons assignments={assignments} handleDeleteClick={isFaculty ? handleDeleteClick : undefined} />
+        )}
+      </div>
+
+      <Modal show={showDeleteDialog} onHide={cancelDelete}>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirm Delete</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>Are you sure you want to delete this assignment?</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={cancelDelete}>Cancel</Button>
+          <Button variant="danger" onClick={confirmDelete}>Delete</Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

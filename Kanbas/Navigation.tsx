@@ -9,7 +9,7 @@ export default function KanbasNavigation() {
 
   const links = [
     { label: "Dashboard", path: "/Kanbas/Dashboard", icon: AiOutlineDashboard },
-    { label: "Courses", path: "/Kanbas/Courses", icon: LiaBookSolid },  // Fixed Courses path
+    { label: "Courses", path: "/Kanbas/Courses", icon: LiaBookSolid },
     { label: "Calendar", path: "/Kanbas/Calendar", icon: IoCalendarOutline },
     { label: "Inbox", path: "/Kanbas/Inbox", icon: FaInbox },
     { label: "Labs", path: "/Labs", icon: LiaCogSolid },
@@ -18,7 +18,7 @@ export default function KanbasNavigation() {
   return (
     <div
       id="wd-kanbas-navigation"
-      style={{ width: 120 }} // Sidebar width adjustment to 120px
+      style={{ width: 120 }}
       className="list-group rounded-0 position-fixed bottom-0 top-0 d-none d-md-block bg-black z-2"
     >
       {/* Northeastern logo */}
@@ -46,7 +46,7 @@ export default function KanbasNavigation() {
       {/* Dynamic Links for Dashboard, Courses, Calendar, Inbox, and Labs */}
       {links.map((link) => (
         <Link
-          key={link.path} // Using the link path as a unique key
+          key={link.path}
           to={link.path}
           className={`list-group-item bg-black text-center border-0 ${
             pathname.includes(link.label) ? "text-danger bg-white" : "text-white bg-black"

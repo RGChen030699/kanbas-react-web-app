@@ -1,16 +1,19 @@
-import { courses } from "../Database";
+import { useSelector } from "react-redux";
 import CoursesNavigation from "./Navigation";
 import Assignments from "./Assignments";
-import AssignmentEditor from "./Assignments/Editor";
+import AssignmentEditor from "./Assignments/AssignmentEditor";
 import Modules from "./Modules";
 import Home from "./Home";
 import PeopleTable from "./People/Table";
 import { Navigate, Route, Routes, useParams } from "react-router";
 import { FaAlignJustify } from "react-icons/fa";
 
-export default function Courses() {
+export default function Courses({ courses }: { courses: any[] }) {
   const { cid } = useParams();
   const course = courses.find((course) => course._id === cid);
+  const { currentUser } = useSelector((state: any) => state.accountReducer);
+  const isFaculty = currentUser.role === "FACULTY";
+
   return (
     <div id="wd-courses">
       <h2 className="text-danger">

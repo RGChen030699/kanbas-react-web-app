@@ -1,10 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../store';
 import { BsGripVertical } from "react-icons/bs";
 import { FaCheckCircle, FaTrash, FaPen } from "react-icons/fa";
 import { IoEllipsisVertical } from "react-icons/io5";
 import { FaFilePen } from "react-icons/fa6";
+import { RootState } from '../../store';
 import { Assignment } from './AssignmentTypes';
 import { User } from "../../Users";
 
@@ -62,22 +62,24 @@ export default function AssignmentControlButtons({ assignments, handleDeleteClic
                 </span>
               </div>
             </div>
-            {isFaculty && (
-              <div className="d-flex align-items-center">
+            <div className="d-flex align-items-center">
+              {isFaculty && handleDeleteClick && (
                 <FaTrash
                   className="text-danger me-3"
                   style={{ cursor: "pointer" }}
-                  onClick={() => handleDeleteClick && handleDeleteClick(assignment._id)}
+                  onClick={() => handleDeleteClick(assignment._id)}
                 />
+              )}
+              {isFaculty && (
                 <FaPen
                   className="me-3"
                   style={{ cursor: "pointer", color: "#007bff" }}
                   onClick={() => navigate(`/Kanbas/Courses/${assignment.course}/Assignments/${assignment._id}`)}
                 />
-                <FaCheckCircle className="text-success me-3" />
-                <IoEllipsisVertical className="fs-4" />
-              </div>
-            )}
+              )}
+              <FaCheckCircle className="text-success me-3" />
+              <IoEllipsisVertical className="fs-4" />
+            </div>
           </div>
         );
       })}
