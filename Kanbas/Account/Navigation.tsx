@@ -1,40 +1,32 @@
-import { NavLink } from "react-router-dom";
-import './AccountNavigation.css';
+import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
 
 export default function AccountNavigation() {
   const { currentUser } = useSelector((state: any) => state.accountReducer);
+  const { pathname } = useLocation();
   const links = currentUser ? ["Profile"] : ["Signin", "Signup"];
+  const active = (path: string) => (pathname.includes(path) ? "active" : "");
+
   return (
-    <div id="wd-account-navigation">
-      <nav>
-        <ul>
-          <li>
-            <NavLink 
-              to={`/Kanbas/Account/Signin`} 
-              className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}
-            >
-              Signin
-            </NavLink>
-          </li>
-          <li>
-            <NavLink 
-              to={`/Kanbas/Account/Signup`} 
-              className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}
-            >
-              Signup
-            </NavLink>
-          </li>
-          <li>
-            <NavLink 
-              to={`/Kanbas/Account/Profile`} 
-              className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}
-            >
-              Profile
-            </NavLink>
-          </li>
-        </ul>
-      </nav>
+    <div id="wd-account-navigation" className="list-group">
+      {links.map((link) => (
+        <Link
+          key={link}
+          to={`/Kanbas/Account/${link}`}
+          className={`list-group-item ${active(link)}`}
+        >
+          {link}
+        </Link>
+      ))}
+      {currentUser && currentUser.role === "ADMIN" && (
+        <Link
+          to={`/Kanbas/Account/Users`}
+          className={`list-group-item ${active("Users")}`}
+        >
+          Users
+        </Link>
+      )}
     </div>
   );
 }
