@@ -46,12 +46,13 @@ export default function Users() {
  const { uid } = useParams();
 
  const fetchUsers = async () => {
-   const users = await client.findAllUsers();
-   setUsers(users);
- };
- useEffect(() => {
-   fetchUsers();
- }, [uid]);
+  const users = await client.findAllUsers();
+  setUsers(users);
+};
+useEffect(() => {
+  fetchUsers();
+}, [uid]);
+
  return (
    <div>
    <button 

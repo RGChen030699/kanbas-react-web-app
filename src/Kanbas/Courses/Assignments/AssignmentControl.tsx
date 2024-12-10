@@ -102,7 +102,7 @@ export default function Assignments() {
             to={`/Kanbas/Courses/${cid}/Assignments/new`}
             className="btn ms-3"
             style={{
-              backgroundColor: '#c82333', // Slightly darker red
+              backgroundColor: '#c82333',
               borderColor: '#c82333',
               color: 'white',
             }}

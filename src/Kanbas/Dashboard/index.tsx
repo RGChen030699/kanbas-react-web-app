@@ -21,14 +21,14 @@ interface DashboardProps {
 }
 
 export default function Dashboard({
+  course,
   courses,
   allCourses,
-  course,
+  enrolling,
   setCourse,
   addNewCourse,
   deleteCourse,
   updateCourse,
-  enrolling,
   setEnrolling,
   updateEnrollment
 }: DashboardProps) {
@@ -46,16 +46,15 @@ export default function Dashboard({
   }, [dispatch, allCourses]);
 
   const handleCourseClick = (courseId: string, event: React.MouseEvent) => {
-    if (currentUser.role === 'STUDENT' && !enrolledCourses.some(c => c._id === courseId)) {
+    if (currentUser.role === 'STUDENT' && !enrolledCourses.some(c => c?._id === courseId)) {
       event.preventDefault();
       return;
     }
   };
 
-  const enrolledCourses = courses || [];
-
+  const enrolledCourses = (courses || []).filter(course => course?._id);
   const availableCourses = (Array.isArray(allCourses) ? allCourses : [])
-    .filter(course => !enrolledCourses.some(enrolled => enrolled._id === course._id));
+    .filter(course => course?._id && !enrolledCourses.some(enrolled => enrolled._id === course._id));
 
   const displayedCourses = currentUser.role === 'FACULTY'
     ? (Array.isArray(allCourses) ? allCourses : [])
@@ -107,21 +106,21 @@ export default function Dashboard({
               className="btn btn-success mb-4"
               onClick={course._id ? updateCourse : addNewCourse}
             >
-              {course._id ? "Next" : "Add Course"}
+              {course._id ? "Done" : "Add Course"}
+            </button>
+            {course._id && (
+              <button
+                className="btn btn-danger mb-4"
+                onClick={() => setCourse({
+                  _id: "",
+                  name: "",
+                  number: "",
+                  description: ""
+                })}
+              >
+                Cancel
               </button>
-              {course._id && (
-                <button
-                  className="btn btn-danger mb-4"
-                  onClick={() => setCourse({
-                    _id: "",
-                    name: "",
-                    number: "",
-                    description: ""
-                  })}
-                >
-                  Cancel
-                </button>
-              )}
+            )}
           </div>
           <hr />
         </>

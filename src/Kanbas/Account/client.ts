@@ -46,6 +46,15 @@ export const createUser = async (user: any) => {
   return response.data;
 };
 
+export const updateUser = async (user: any) => {
+  const response = await axiosWithCredentials.put(`${USERS_API}/${user._id}`, user);
+  return response.data;
+};
+
+export const deleteUser = async (userId: string) => {
+  const response = await axios.delete( `${USERS_API}/${userId}` );
+  return response.data;
+};
 
 export const findUsersByRole = async (role: string) => {
   const response = await
@@ -70,6 +79,11 @@ export const findUserById = async (id: string) => {
     throw error;
   }
 };
+  
+export const profile = async () => {
+  const response = await axiosWithCredentials.post(`${USERS_API}/profile`);
+  return response.data;
+};
 
 export const signin = async (credentials: any) => {
   console.log('Signin attempt:', { url: `${USERS_API}/signin`, credentials });  
@@ -82,23 +96,8 @@ export const signup = async (user: any) => {
     return response.data;
   };
   
-  export const updateUser = async (user: any) => {
-    const response = await axiosWithCredentials.put(`${USERS_API}/${user._id}`, user);
-    return response.data;
-  };
-
-  export const deleteUser = async (userId: string) => {
-    const response = await axios.delete( `${USERS_API}/${userId}` );
-    return response.data;
-  };
   
-  
-  export const profile = async () => {
-    const response = await axiosWithCredentials.post(`${USERS_API}/profile`);
-    return response.data;
-  };
-  
-  export const signout = async () => {
+export const signout = async () => {
     const response = await axiosWithCredentials.post(`${USERS_API}/signout`);
     return response.data;
   };

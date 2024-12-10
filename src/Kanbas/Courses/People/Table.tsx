@@ -4,31 +4,14 @@ import PeopleDetails from "./Details";
 import { Link } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import { findUsersForCourse } from "../client";
+import {UserTable} from "./PeopleTypes";
 
-interface User {
-  _id: string;
-  firstName: string;
-  lastName: string;
-  loginId: string;
-  section: string;
-  role: string;
-  lastActivity: string;
-  totalActivity: string;
-}
-
-interface Enrollment {
-  _id: string;
-  user: string;
-  course: string;
-}
-
-type SortKey = keyof User;
-
+type SortKey = keyof UserTable;
 
 export default function PeopleTable({ users = [] }: { users?: any[] }) {
   const [sortKey, setSortKey] = useState<SortKey>("lastName");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [courseUsers, setCourseUsers] = useState<User[]>([]); 
+  const [courseUsers, setCourseUsers] = useState<UserTable[]>([]); 
   const { cid: courseId } = useParams<{ cid: string }>();
 
   useEffect(() => {
