@@ -1,70 +1,119 @@
-import { FaUserCircle } from "react-icons/fa";
+import React, { useState, useEffect } from "react";
+import { FaUserCircle, FaSort } from "react-icons/fa";
+import PeopleDetails from "./Details";
+import { Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { findUsersForCourse } from "../client";
 
-export default function PeopleTable() {
+interface User {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  loginId: string;
+  section: string;
+  role: string;
+  lastActivity: string;
+  totalActivity: string;
+}
+
+interface Enrollment {
+  _id: string;
+  user: string;
+  course: string;
+}
+
+type SortKey = keyof User;
+
+
+export default function PeopleTable({ users = [] }: { users?: any[] }) {
+  const [sortKey, setSortKey] = useState<SortKey>("lastName");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [courseUsers, setCourseUsers] = useState<User[]>([]); 
+  const { cid: courseId } = useParams<{ cid: string }>();
+
+  useEffect(() => {
+    const fetchCourseUsers = async () => {
+      try {
+        if (courseId) {
+          const fetchedUsers = await findUsersForCourse(courseId);
+          setCourseUsers(fetchedUsers);
+        }
+      } catch (error) {
+        console.error("Error fetching course users:", error);
+      }
+    };
+    fetchCourseUsers();
+  }, [courseId]);
+
+  const handleSort = (key: SortKey) => {
+    setSortOrder(sortOrder === "asc" && sortKey === key ? "desc" : "asc");
+    setSortKey(key);
+  };
+
+  const displayUsers = courseId ? courseUsers : users;
+
+  if (!displayUsers) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div id="wd-people-table">
-      <table className="table table-striped">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Login ID</th>
-            <th>Section</th>
-            <th>Role</th>
-            <th>Last Activity</th>
-            <th>Total Activity</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td className="wd-full-name text-nowrap">
-              <FaUserCircle className="me-2 fs-1 text-secondary" />
-              <span className="wd-first-name">Tony</span>{" "}
-              <span className="wd-last-name">Stark</span>
-            </td>
-            <td className="wd-login-id">001234561S</td>
-            <td className="wd-section">S101</td>
-            <td className="wd-role">STUDENT</td>
-            <td className="wd-last-activity">2020-10-01</td>
-            <td className="wd-total-activity">10:21:32</td>
-          </tr>
-          <tr>
-            <td className="wd-full-name text-nowrap">
-              <FaUserCircle className="me-2 fs-1 text-secondary" />
-              <span className="wd-first-name">Bruce</span>{" "}
-              <span className="wd-last-name">Wayne</span>
-            </td>
-            <td className="wd-login-id">001234562B</td>
-            <td className="wd-section">S102</td>
-            <td className="wd-role">STUDENT</td>
-            <td className="wd-last-activity">2020-10-02</td>
-            <td className="wd-total-activity">12:45:10</td>
-          </tr>
-          <tr>
-            <td className="wd-full-name text-nowrap">
-              <FaUserCircle className="me-2 fs-1 text-secondary" />
-              <span className="wd-first-name">Steve</span>{" "}
-              <span className="wd-last-name">Rogers</span>
-            </td>
-            <td className="wd-login-id">001234563C</td>
-            <td className="wd-section">S103</td>
-            <td className="wd-role">STUDENT</td>
-            <td className="wd-last-activity">2020-10-03</td>
-            <td className="wd-total-activity">08:30:45</td>
-          </tr>
-          <tr>
-            <td className="wd-full-name text-nowrap">
-              <FaUserCircle className="me-2 fs-1 text-secondary" />
-              <span className="wd-first-name">Natasha</span>{" "}
-              <span className="wd-last-name">Romanoff</span>
-            </td>
-            <td className="wd-login-id">001234564D</td>
-            <td className="wd-section">S104</td>
-            <td className="wd-role">STUDENT</td>
-            <td className="wd-last-activity">2020-10-04</td>
-            <td className="wd-total-activity">09:15:20</td>
-          </tr>
-        </tbody>
-      </table>
+      <PeopleDetails />
+      <h3>People: </h3>
+      {displayUsers .length === 0 ? (
+        <p>No users found.</p>
+      ) : (
+        <table className="table table-striped">
+          <thead>
+            <tr>
+            <th onClick={() => handleSort("lastName")}>
+                _id <FaSort />
+              </th>
+              <th onClick={() => handleSort("lastName")}>
+                Name <FaSort />
+              </th>
+              <th onClick={() => handleSort("loginId")}>
+                Login ID <FaSort />
+              </th>
+              <th onClick={() => handleSort("section")}>
+                Section <FaSort />
+              </th>
+              <th onClick={() => handleSort("role")}>
+                Role <FaSort />
+              </th>
+              <th onClick={() => handleSort("lastActivity")}>
+                Last Activity <FaSort />
+              </th>
+              <th onClick={() => handleSort("totalActivity")}>
+                Total Activity <FaSort />
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {displayUsers .map((user) => (
+              <tr key={user._id}>
+                    <td className="text-nowrap">
+                    <small className="text-muted">ID: {user._id}</small>
+                  </td>
+                <td className="wd-full-name text-nowrap">
+                  <Link to={`/Kanbas/Account/Users/${user._id}`} className="text-decoration-none">
+
+                    <FaUserCircle className="me-2 fs-1 text-secondary" />
+                    <span className="wd-first-name">{user.firstName}</span>{" "}
+                    <span className="wd-last-name">{user.lastName}</span>
+                  </Link>
+                </td>
+                <td className="wd-login-id">{user.loginId}</td>
+                <td className="wd-section">{user.section}</td>
+                <td className="wd-role">{user.role}</td>
+                <td className="wd-last-activity">{user.lastActivity}</td>
+                <td className="wd-total-activity">{user.totalActivity}</td>
+                
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }

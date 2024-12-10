@@ -1,0 +1,117 @@
+import React, { useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useSelector, useDispatch } from "react-redux";
+import { toggleShowAllCourses, fetchEnrollments } from './client';
+import { RootState, AppDispatch  } from '../store';
+import type { DashboardCourseList } from './DashboardTypes';
+
+interface DashboardCourseListProps {
+  courses: any[]; 
+  allCourses: any[]; 
+}
+
+export default function DashboardCourseList({ courses, allCourses }: DashboardCourseListProps) {
+  const dispatch = useDispatch<AppDispatch>();
+  const { currentUser } = useSelector((state: RootState) => state.accountReducer);
+  const { showAllCourses } = useSelector(
+    (state: RootState) => state.enrollmentReducer
+  );
+
+  useEffect(() => {
+    if (Array.isArray(allCourses)) {
+      const fetchEnrollmentsInBatches = async () => {
+        const batchSize = 3;
+        for (let i = 0; i < allCourses.length; i += batchSize) {
+          const batch = allCourses.slice(i, i + batchSize);
+          await Promise.all(
+            batch.map(course => dispatch(fetchEnrollments(course._id)))
+          );
+        }
+      };
+      fetchEnrollmentsInBatches();
+    }
+  }, [dispatch, allCourses]);
+
+  const isEnrolled = (courseId: string) => {
+    return courses.some(course => course._id === courseId);
+  };
+
+  const enrolledCourses = courses;
+  const availableCourses = Array.isArray(allCourses) 
+    ? allCourses.filter(course => !isEnrolled(course._id)) 
+    : [];
+  const displayedCourses = showAllCourses ? availableCourses : enrolledCourses;
+
+  return (
+    <div id="wd-course-list" className="container-fluid px-4">
+      <div className="row align-items-center mb-4 mt-3">
+        <div className="col">
+          <h2 className="m-0">
+            {showAllCourses ? 'Available' : 'My'} Courses ({displayedCourses.length})
+          </h2>
+        </div>
+        { (
+          <div className="col-auto">
+            <button
+              className="btn btn-primary"
+              style={{ minWidth: '140px' }}
+              onClick={() => dispatch(toggleShowAllCourses())}
+            >
+              {showAllCourses ? 'Show My Courses' : 'Show All Courses'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      <ul className="list-group">
+        {displayedCourses.map((course: DashboardCourseList) => (
+          <li key={course._id} 
+              className="list-group-item border-0 p-3"
+              style={{
+                borderBottom: '1px solid #dee2e6',
+                marginBottom: '0.5rem'
+              }}>
+            <Link
+              to={`/Kanbas/Courses/${course._id}/Home`}
+              className="text-danger text-decoration-none d-block mb-2"
+              style={{ fontSize: '1.1rem', fontWeight: 'bold' }}
+            >
+              {course.number} - {course.name}
+            </Link>
+            
+            <div className="course-details" style={{ fontSize: '0.9rem', color: 'gray' }}>
+              <p className="mb-1">Term: {course.startDate} to {course.endDate}</p>
+              <p className="mb-1">Department: {course.department}, {course.credits} Credits</p>
+              {currentUser.role === 'STUDENT' && isEnrolled(course._id) && (
+                <p className="mb-0 text-success fw-bold">
+                  ✓ Enrolled
+                </p>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      {enrolledCourses.length === 0 && !showAllCourses && (
+        <div className="alert alert-info mt-4">
+          You are not enrolled in any courses yet.
+          <br />
+          Click "Show All Courses" to view available courses.
+        </div>
+      )}
+
+      {showAllCourses && availableCourses.length === 0 && (
+        <div className="alert alert-info mt-4">
+          No additional courses are available for enrollment at this time.
+        </div>
+      )}
+
+      {showAllCourses && availableCourses.length > 0 && (
+        <div className="alert alert-light mt-4 border">
+          Browse all available courses above.
+          Click "Show My Courses" to see only your enrolled courses.
+        </div>
+      )}
+    </div>
+  );
+}

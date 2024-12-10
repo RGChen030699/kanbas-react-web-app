@@ -1,24 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { BsGripVertical, BsPlus } from 'react-icons/bs';
 import { FaSearch, FaTrash } from 'react-icons/fa';
-import { FaPen } from 'react-icons/fa';
+import { FaPencil, FaFilePen } from 'react-icons/fa6';
 import { deleteAssignment, setAssignments } from './reducer';
 import * as assignmentsClient from "./client";
-import type {Assignments} from "./AssignmentTypes";
+import { AssignmentControl } from './AssignmentTypes';
 
 interface KanbasState {
   assignmentsReducer: {
-    assignments: Assignments[];
+    assignments: AssignmentControl[];
   };
 }
 
 export default function Assignments() {
   const { cid } = useParams();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
-  
+
   const [deleteDialog, setDeleteDialog] = useState({
     isOpen: false,
     assignmentId: '',
@@ -43,10 +42,6 @@ export default function Assignments() {
     fetchAssignments();
   }, [cid, dispatch]);
 
-  const handleAddAssignment = () => {
-    navigate(`/Kanbas/Courses/${cid}/Assignments/new`);
-  };
-
   const handleDeleteClick = (assignmentId: string, title: string) => {
     setDeleteDialog({
       isOpen: true,
@@ -55,14 +50,6 @@ export default function Assignments() {
     });
   };
 
-  const handleDeleteCancel = () => {
-    setDeleteDialog({
-      isOpen: false,
-      assignmentId: '',
-      assignmentTitle: ''
-    });
-  };
-  
   const handleDeleteConfirm = async () => {
     try {
       await assignmentsClient.deleteAssignment(deleteDialog.assignmentId);
@@ -77,6 +64,13 @@ export default function Assignments() {
     }
   };
 
+  const handleDeleteCancel = () => {
+    setDeleteDialog({
+      isOpen: false,
+      assignmentId: '',
+      assignmentTitle: ''
+    });
+  };
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'No due date';
@@ -104,12 +98,17 @@ export default function Assignments() {
         <div>
           <button className="btn btn-secondary me-2">SHOW BY DATE</button>
           <button className="btn btn-secondary">SHOW BY TYPE</button>
-          <button 
-            className="btn btn-danger ms-3"
-            onClick={handleAddAssignment}
+          <Link
+            to={`/Kanbas/Courses/${cid}/Assignments/new`}
+            className="btn ms-3"
+            style={{
+              backgroundColor: '#c82333', // Slightly darker red
+              borderColor: '#c82333',
+              color: 'white',
+            }}
           >
             <BsPlus className="me-1" /> Assignment
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -122,48 +121,45 @@ export default function Assignments() {
           >
             <div className="d-flex align-items-center">
               <BsGripVertical className="me-2 fs-3" />
-              <div className="wd-title p-3 ps-2 bg-light flex-grow-1 fw-bold">
-                  {assignment.title}
+              <div className="wd-title p-3 ps-2 bg-light flex-grow-1">
+                {assignment.title}
+              </div>
+              <div className="d-flex align-items-center pe-3">
+                <Link
+                  to={`/Kanbas/Courses/${cid}/Assignments/${assignment._id}`}
+                  className="text-decoration-none me-2"
+                >
+                  <FaPencil className="text-primary" />
+                </Link>
+                <FaTrash
+                  className="text-danger"
+                  onClick={() => handleDeleteClick(assignment._id, assignment.title)}
+                  style={{ cursor: 'pointer' }}
+                />
               </div>
             </div>
             <ul className="wd-assignments-list list-group rounded-0">
               <li className="wd-assignment-item list-group-item p-3 ps-1">
-                <div className="d-flex justify-content-between">
-                <div className="d-flex flex-column">
-                  <Link
-                    to={`/Kanbas/Courses/${cid}/Assignments/${assignment._id}`}
-                    className="text-decoration-none fw-bold"
-                  >
-                    {assignment.title}
-                  </Link>
-                  {assignment.description && (
-                    <p className="text-muted mb-0">
-                      {assignment.description.substring(0, 100)}
-                      {assignment.description.length > 100 ? '...' : ''}
-                    </p>
-                  )}
-                </div>
+                <div className="d-flex justify-content-between align-items-center">
                   <div className="d-flex align-items-center">
-                    <div className="text-end me-3">
-                      <div className="text-muted">
-                        Due: {formatDate(assignment.dueDate || '')}
-                      </div>
-                      <div>
-                        <strong>Points:</strong> {assignment.points || 0}
-                      </div>
+                    <FaFilePen className="me-2" style={{ color: '#dc3545' }} />
+                    <Link 
+                      to={`/Kanbas/Courses/${cid}/Assignments/${assignment._id}`}
+                      className="wd-assignment-link text-decoration-none"
+                    >
+                      {assignment.title}
+                      <p className="text-muted mb-0">
+                        {assignment.description && assignment.description.substring(0, 100)}
+                        {assignment.description && assignment.description.length > 100 ? '...' : ''}
+                      </p>
+                    </Link>
+                  </div>
+                  <div className="text-end me-3">
+                    <div className="text-muted">
+                      Due: {formatDate(assignment.dueDate)}
                     </div>
                     <div>
-                      <Link 
-                        to={`/Kanbas/Courses/${cid}/Assignments/${assignment._id}`}
-                        className="text-decoration-none me-2"
-                      >
-                        <FaPen className="text-primary" />
-                      </Link>
-                      <FaTrash
-                        className="text-danger"
-                        onClick={() => handleDeleteClick(assignment._id, assignment.title)}
-                        style={{ cursor: 'pointer' }}
-                      />
+                      <strong>Points:</strong> {assignment.points}
                     </div>
                   </div>
                 </div>

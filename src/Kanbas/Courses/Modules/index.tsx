@@ -1,155 +1,139 @@
-import { useState } from 'react';
-import { BsGripVertical, BsChevronDown, BsChevronUp } from "react-icons/bs"; 
-import GreenCheckmark from "./GreenCheckmark";
-import ModuleControlButtons from "./ModuleControlButtons";
-import LessonControlButtons from "./LessonControlButtons";
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams } from 'react-router';
+import { BsGripVertical } from 'react-icons/bs';
+import ModuleControlButtons from './ModuleControlButtons';
+import ModulesControls from './ModulesControls';
+import { courses } from '../../Database';
+import { useSelector, useDispatch } from "react-redux";
+import { setModules, addModule, editModule, updateModule, deleteModule } from "./reducer";
+import * as coursesClient from "../client";
+import * as modulesClient from "../client";
 
-export default function Modules() {
-  const [showLessonsWeek1, setShowLessonsWeek1] = useState(false);
-  const [showLessonsWeek2, setShowLessonsWeek2] = useState(false);
+interface ModulesProps {
+  courseCode?: string;
+}
 
-  const toggleWeek1Lessons = () => setShowLessonsWeek1(!showLessonsWeek1);
-  const toggleWeek2Lessons = () => setShowLessonsWeek2(!showLessonsWeek2);
-
-  const buttonStyle = {
-    backgroundColor: "#6c757d",
-    color: "black",
-    border: "1px solid #6c757d",
-    padding: "6px 15px",
-    borderRadius: "5px",
-    marginRight: "20px",
-    cursor: "pointer",
+export default function Modules({ courseCode }: ModulesProps = {}) {
+  
+  // const [isExpanded, setIsExpanded] = useState({
+  //   module1: true,
+  //   module2: true
+  // });
+  const [moduleName, setModuleName] = useState("");
+  
+  const { cid } = useParams();
+  const currentCourseId = courseCode || cid;
+  const course = courses.find((course) => course._id === currentCourseId);
+ 
+  const dispatch = useDispatch();
+  const saveModule = async (module: any) => {
+    await modulesClient.updateModule(module);
+    dispatch(updateModule(module));
   };
 
-  const redButtonStyle = {
-    backgroundColor: "#B22222",
-    color: "white",
-    border: "none",
-    padding: "6px 15px",
-    borderRadius: "5px",
-    cursor: "pointer",
+  const createModuleForCourse = async () => {
+    if (!cid) return;
+    const newModule = { name: moduleName, course: cid };
+    const module = await coursesClient.createModuleForCourse(cid, newModule);
+    dispatch(addModule(module));
+  };
+
+  const fetchModules = useCallback(async () => {
+    if (!cid) return;
+    const modules = await coursesClient.findModulesForCourse(cid as string);
+    dispatch(setModules(modules));
+  }, [cid, dispatch]);
+
+  useEffect(() => {
+    fetchModules();
+  }, [fetchModules]);
+
+  const modules = useSelector((state: any) => state.modulesReducer.modules);
+  const removeModule = async (moduleId: string) => {
+    await modulesClient.deleteModule(moduleId);
+    dispatch(deleteModule(moduleId));
+  };
+
+
+
+  // const toggleModule = (moduleId: 'module1' | 'module2') => {
+  //   setIsExpanded(prev => ({
+  //     ...prev,
+  //     [moduleId]: !prev[moduleId]
+  //   }));
+  // };
+
+  const handleCollapseAll = () => {
+    // setIsExpanded({
+    //   module1: false,
+    //   module2: false
+    // });
+  };
+
+  const handleExpandAll = () => {
+    // setIsExpanded({
+    //   module1: true,
+    //   module2: true
+    // });
   };
 
   return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          marginBottom: "15px",
-        }}
-      >
-        <button style={buttonStyle}>Collapse All</button>
-        <button style={buttonStyle}>View Progress</button>
+    <div id="wd-modules">
+      <h2>Course {course && course.number}</h2>
 
-        <div style={{ ...buttonStyle, display: 'flex', alignItems: 'center' }}>
-          <GreenCheckmark />
-          <select style={{ border: "none", backgroundColor: "transparent", color: "black" }}>
-            <option>Publish All</option>
-            <option>Unpublish All</option>
-          </select>
-        </div>
+      {/* Modules Controls */}
+      <ModulesControls
+        onCollapseAll={handleCollapseAll}
+        onExpandAll={handleExpandAll}
+        setModuleName={setModuleName}
+        moduleName={moduleName}
+        addModule={createModuleForCourse}
+      />
+      <br /><br /><br /><br />
 
-        <button style={redButtonStyle}>+ Module</button>
-      </div>
+      {/* Dynamic modules */}
+      <ul className="list-group rounded-0">
+        {modules
+          //.filter((module: any) => module.course === currentCourseId)
+          .map((module: any) => (
+            <li key={module._id} className="wd-module list-group-item p-0 mb-5 fs-5 border-gray">
+              <div className="wd-title p-3 ps-2 bg-secondary">
+                <BsGripVertical className="me-2 fs-3" />
+                {!module.editing ? (
+                  module.name
+                ) : (
+                  <input
+                    className="form-control w-50 d-inline-block"
+                    onChange={(e) =>
+                      dispatch(updateModule({ ...module, name: e.target.value }))
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        saveModule({ ...module, editing: false });
 
-      <ul id="wd-modules" className="list-group rounded-0">
-        <li className="wd-module list-group-item p-0 mb-5 fs-5 border-gray">
-          <div className="wd-title p-3 ps-2 bg-secondary d-flex align-items-center">
-            <BsGripVertical className="me-2 fs-3" />
-            <span className="flex-grow-1 d-flex align-items-center" onClick={toggleWeek1Lessons} style={{ cursor: 'pointer' }}>
-              Week 1
-              {showLessonsWeek1 ? <BsChevronUp className="ms-2" /> : <BsChevronDown className="ms-2" />}
-            </span>
-            <ModuleControlButtons />
-          </div>
-          {showLessonsWeek1 && (
-            <ul className="wd-lessons list-group rounded-0">
-              <li className="wd-lesson list-group-item p-3 ps-1 d-flex align-items-center">
-                <BsGripVertical className="me-2 fs-3" />
-                <span className="d-flex align-items-center me-2">
-                  <GreenCheckmark />
-                </span>
-                <span className="flex-grow-1">LEARNING OBJECTIVES</span>
-                <LessonControlButtons />
-              </li>
-              <li className="wd-lesson list-group-item p-3 ps-1 d-flex align-items-center">
-                <BsGripVertical className="me-2 fs-3" />
-                <span className="d-flex align-items-center me-2">
-                  <GreenCheckmark />
-                </span>
-                <span className="flex-grow-1">Introduction to the course</span>
-                <LessonControlButtons />
-              </li>
-              <li className="wd-lesson list-group-item p-3 ps-1 d-flex align-items-center">
-                <BsGripVertical className="me-2 fs-3" />
-                <span className="d-flex align-items-center me-2">
-                  <GreenCheckmark />
-                </span>
-                <span className="flex-grow-1">Learn what is Web Development</span>
-                <LessonControlButtons />
-              </li>
+                      }
+                    }}
+                    defaultValue={module.name}
+                  />
+                )}
+                <ModuleControlButtons
+                  moduleId={module._id}
+                  deleteModule={(moduleId) => removeModule(moduleId)}
+                  editModule={(moduleId) => dispatch(editModule(moduleId))}
+                />
+              </div>
 
-              <ul className="wd-lessons list-group rounded-0" style={{ paddingLeft: "0" }}>
-                <li className="wd-lesson list-group-item p-3 ps-1 d-flex align-items-center">
-                  <BsGripVertical className="me-2 fs-3" />
-                  <span className="d-flex align-items-center me-2">
-                    <GreenCheckmark />
-                  </span>
-                  <span className="flex-grow-1">LESSON 1</span>
-                  <LessonControlButtons />
-                </li>
-                <li className="wd-lesson list-group-item p-3 ps-1 d-flex align-items-center">
-                  <BsGripVertical className="me-2 fs-3" />
-                  <span className="d-flex align-items-center me-2">
-                    <GreenCheckmark />
-                  </span>
-                  <span className="flex-grow-1">LESSON 2</span>
-                  <LessonControlButtons />
-                </li>
-              </ul>
-            </ul>
-          )}
-        </li>
-
-        <li className="wd-module list-group-item p-0 mb-5 fs-5 border-gray">
-          <div className="wd-title p-3 ps-2 bg-secondary d-flex align-items-center">
-            <BsGripVertical className="me-2 fs-3" />
-            <span className="flex-grow-1 d-flex align-items-center" onClick={toggleWeek2Lessons} style={{ cursor: 'pointer' }}>
-              Week 2
-              {showLessonsWeek2 ? <BsChevronUp className="ms-2" /> : <BsChevronDown className="ms-2" />}
-            </span>
-            <ModuleControlButtons />
-          </div>
-          {showLessonsWeek2 && (
-            <ul className="wd-lessons list-group rounded-0">
-              <li className="wd-lesson list-group-item p-3 ps-1 d-flex align-items-center">
-                <BsGripVertical className="me-2 fs-3" />
-                <span className="d-flex align-items-center me-2">
-                  <GreenCheckmark />
-                </span>
-                <span className="flex-grow-1">LEARNING OBJECTIVES</span>
-                <LessonControlButtons />
-              </li>
-              <li className="wd-lesson list-group-item p-3 ps-1 d-flex align-items-center">
-                <BsGripVertical className="me-2 fs-3" />
-                <span className="d-flex align-items-center me-2">
-                  <GreenCheckmark />
-                </span>
-                <span className="flex-grow-1">LESSON 1</span>
-                <LessonControlButtons />
-              </li>
-              <li className="wd-lesson list-group-item p-3 ps-1 d-flex align-items-center">
-                <BsGripVertical className="me-2 fs-3" />
-                <span className="d-flex align-items-center me-2">
-                  <GreenCheckmark />
-                </span>
-                <span className="flex-grow-1">LESSON 2</span>
-                <LessonControlButtons />
-              </li>
-            </ul>
-          )}
-        </li>
+              {module.lessons && (
+                <ul className="wd-lessons list-group rounded-0">
+                  {module.lessons.map((lesson: any) => (
+                    <li key={lesson.id} className="wd-lesson list-group-item p-3 ps-1">
+                      <BsGripVertical className="me-2 fs-3" /> {lesson.name}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
       </ul>
     </div>
   );
