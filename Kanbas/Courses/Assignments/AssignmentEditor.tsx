@@ -1,178 +1,238 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { addAssignment, updateAssignment } from './reducer';
-import { RootState } from '../../store';
-import * as coursesClient from "../client";
-import * as assignmentsClient from "./client";
+import * as assignmentsClient from './client';
+import { AssignmentForm } from './AssignmentTypes';
+
+interface Assignment extends AssignmentForm {
+  _id: string;
+  course: string;
+}
+
+interface KanbasState {
+  assignmentsReducer: {
+    assignments: Assignment[];
+  };
+}
 
 export default function AssignmentEditor() {
-  const { cid, aid } = useParams<{ cid: string; aid: string }>();
+  const { cid, aid } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const assignments = useSelector((state: RootState) => state.assignments.assignments);
-  const isEditing = aid && aid !== 'new';
+  const assignment = useSelector((state: KanbasState) =>
+    state.assignmentsReducer.assignments.find((a) => a._id === aid)
+  );
 
-  const [assignment, setAssignment] = useState({
-    _id: "",
-    title: "New Assignment",
-    description: "New Assignment Description",
+  const [formData, setFormData] = useState<AssignmentForm>({
+    title: '',
+    description: '',
     points: 100,
-    assignTo: "Everyone",
-    dueDate: new Date().toISOString().slice(0, 16),
-    availableFrom: new Date().toISOString().slice(0, 16),
-    availableUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
-    course: cid || "",
+    dueDate: '',
+    availableFromDate: '',
+    availableUntilDate: '',
   });
 
+
+  const [assignTo, setAssignTo] = useState<string>('Everyone');
+
   useEffect(() => {
-    if (isEditing && assignments.length > 0) {
-      const foundAssignment = assignments.find(
-        (assignment) => assignment._id === aid && assignment.course === cid
-      );
-      if (foundAssignment) {
-        setAssignment({
-          _id: foundAssignment._id,
-          title: foundAssignment.title || "",
-          description: foundAssignment.description || "",
-          points: foundAssignment.points || 100,
-          assignTo: foundAssignment.assignTo || "Everyone",
-          dueDate: foundAssignment.dueDate || new Date().toISOString().slice(0, 16),
-          availableFrom: foundAssignment.availableFrom || new Date().toISOString().slice(0, 16),
-          availableUntil: foundAssignment.availableUntil || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
-          course: foundAssignment.course || cid || "",
-        });
-        console.log("Editing assignment:", foundAssignment);
-      } else {
-        console.error(`No assignment found with ID ${aid} for course ${cid}`);
-      }
+    if (assignment) {
+      setFormData({
+        title: assignment.title || '',
+        description: assignment.description || '',
+        points: assignment.points || 100,
+        dueDate: assignment.dueDate || '',
+        availableFromDate: assignment.availableFromDate || '',
+        availableUntilDate: assignment.availableUntilDate || '',
+      });
     }
-  }, [isEditing, aid, assignments, cid]);
+  }, [assignment]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setAssignment((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  const saveAssignment = async (assignment: any) => {
-    await assignmentsClient.updateAssignment(assignment);
-    dispatch(updateAssignment(assignment));
-  };
-
-  const createAssignment = async (assignment: any) => {
-    const newAssignment = await coursesClient.createAssignmentForCourse(
-      cid as string,
-      assignment
-    );
-    dispatch(addAssignment(newAssignment));
+  const handleAssignToChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setAssignTo(e.target.value);
   };
 
   const handleSave = async () => {
     try {
-      if (isEditing) {
-        await saveAssignment(assignment);
-        console.log("Assignment updated:", assignment);
+      if (aid && aid !== 'new') {
+        const updatedAssignment = await assignmentsClient.updateAssignment({
+          ...formData,
+          _id: aid,
+          course: cid,
+        });
+        dispatch(updateAssignment(updatedAssignment));
       } else {
-        await createAssignment(assignment);
-        console.log("New assignment created:", assignment);
+        const newAssignment = await assignmentsClient.createAssignmentForCourse(
+          cid as string,
+          {
+            ...formData,
+            course: cid,
+          }
+        );
+        dispatch(addAssignment(newAssignment));
       }
       navigate(`/Kanbas/Courses/${cid}/Assignments`);
     } catch (error) {
-      console.error("Failed to save assignment:", error);
+      console.error('Error saving assignment:', error);
     }
-  };  
+  };
+
+  const handleCancel = () => {
+    navigate(`/Kanbas/Courses/${cid}/Assignments`);
+  };
 
   return (
-    <div id="wd-assignments-editor" className="container mt-4">
-      <div className="mb-4">
-        <label htmlFor="wd-name" className="form-label">Assignment Name</label>
+    <div className="p-4">
+      <div className="mb-3">
+        <label htmlFor="title" className="form-label">
+          Assignment Name
+        </label>
         <input
-          id="wd-name"
+          type="text"
+          className="form-control"
+          id="title"
           name="title"
-          className="form-control"
-          value={assignment.title}
+          value={formData.title}
           onChange={handleChange}
+          placeholder="New Assignment"
         />
       </div>
 
-      <div className="mb-4">
-        <label htmlFor="wd-description" className="form-label">Description</label>
+      <div className="mb-3">
+        <label htmlFor="description" className="form-label">
+          Assignment Description
+        </label>
         <textarea
-          id="wd-description"
+          className="form-control"
+          id="description"
           name="description"
-          className="form-control"
-          rows={6}
-          value={assignment.description}
+          rows={4}
+          value={formData.description}
           onChange={handleChange}
+          placeholder="New Assignment Description"
         />
       </div>
 
-      <div className="mb-4">
-        <label htmlFor="wd-points" className="form-label">Points</label>
-        <input
-          id="wd-points"
-          name="points"
-          type="number"
-          className="form-control"
-          value={assignment.points}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div className="mb-4">
-        <label htmlFor="wd-assign-to" className="form-label">Assign To</label>
-        <input
-          id="wd-assign-to"
-          name="assignTo"
-          className="form-control"
-          value={assignment.assignTo}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div className="row mb-4">
-        <div className="col-md-4">
-          <label htmlFor="wd-due-date" className="form-label">Due Date</label>
-          <input
-            type="datetime-local"
-            id="wd-due-date"
-            name="dueDate"
-            className="form-control"
-            value={assignment.dueDate}
-            onChange={handleChange}
-          />
+      <div className="mb-3">
+        <div className="row align-items-center">
+          <div className="col-10">
+            <label htmlFor="points" className="form-label">Points</label>
+          </div>
+          <div className="col-11">
+            <input
+              type="number"
+              className="form-control"
+              id="points"
+              name="points"
+              value={formData.points}
+              onChange={handleChange}
+              style={{ width: '100px' }}
+            />
+          </div>
         </div>
       </div>
 
-      <div className="row mb-4">
-        <div className="col-md-4">
-          <label htmlFor="wd-available-from" className="form-label">Available From</label>
-          <input
-            type="datetime-local"
-            id="wd-available-from"
-            name="availableFrom"
-            className="form-control"
-            value={assignment.availableFrom}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="col-md-4">
-          <label htmlFor="wd-available-until" className="form-label">Until</label>
-          <input
-            type="datetime-local"
-            id="wd-available-until"
-            name="availableUntil"
-            className="form-control"
-            value={assignment.availableUntil}
-            onChange={handleChange}
-          />
+
+      <div className="mb-3">
+        <label htmlFor="assignTo" className="form-label">
+          Assign To
+        </label>
+        <select
+          id="assignTo"
+          className="form-select"
+          value={assignTo}
+          onChange={handleAssignToChange}
+        >
+          <option value="Everyone">Everyone</option>
+          <option value="Specific Section">Specific Section</option>
+        </select>
+      </div>
+
+      <div className="mb-3">
+        <div className="row">
+          <div className="col-10">
+            <label className="form-label">Assignment Dates</label>
+          </div>
+          <div className="col-11">
+            <div className="border p-3">
+              <div className="mb-3">
+                <label htmlFor="dueDate" className="form-label">
+                  Due
+                </label>
+                <div className="input-group">
+                  <input
+                    type="datetime-local"
+                    className="form-control"
+                    id="dueDate"
+                    name="dueDate"
+                    value={formData.dueDate}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              <div className="row">
+                <div className="col-6">
+                  <label htmlFor="availableFromDate" className="form-label">
+                    Available from
+                  </label>
+                  <div className="input-group">
+                    <input
+                      type="datetime-local"
+                      className="form-control"
+                      id="availableFromDate"
+                      name="availableFromDate"
+                      value={formData.availableFromDate}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+                <div className="col-6">
+                  <label htmlFor="availableUntilDate" className="form-label">
+                    Until
+                  </label>
+                  <div className="input-group">
+                    <input
+                      type="datetime-local"
+                      className="form-control"
+                      id="availableUntilDate"
+                      name="availableUntilDate"
+                      value={formData.availableUntilDate}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="d-flex justify-content-end">
-        <Link to={`/Kanbas/Courses/${cid}/Assignments`} className="btn btn-light me-2">Cancel</Link>
-        <button onClick={handleSave} className="btn btn-danger">Save</button>
+      <div className="mt-4 text-end">
+        <button
+          type="button"
+          className="btn btn-light me-2"
+          onClick={handleCancel}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          className="btn btn-danger"
+          onClick={handleSave}
+        >
+          Save
+        </button>
       </div>
     </div>
   );

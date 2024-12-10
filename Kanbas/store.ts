@@ -1,18 +1,26 @@
 import { configureStore } from "@reduxjs/toolkit";
 import modulesReducer from "./Courses/Modules/reducer";
 import accountReducer from "./Account/reducer";
-import assignmentsReducer from './Courses/Assignments/reducer';
-import enrollmentReducer from './reducer';
+import assignmentsReducer from "./Courses/Assignments/reducer";
+import enrollmentReducer from "./Dashboard/reducer";
+import { EnrollmentState } from "./Dashboard/DashboardTypes";
+
+export interface RootState {
+  modulesReducer: any;
+  accountReducer: any;
+  assignmentsReducer: any;
+  enrollmentReducer: EnrollmentState;
+}
 
 const store = configureStore({
   reducer: {
     modulesReducer,
     accountReducer,
-    assignments: assignmentsReducer,
-    enrollment: enrollmentReducer,
-  },
+    assignmentsReducer,
+    enrollmentReducer
+  }
 });
 
-export type RootState = ReturnType<typeof store.getState>;
+
 export type AppDispatch = typeof store.dispatch;
 export default store;

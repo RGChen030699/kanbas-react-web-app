@@ -1,122 +1,213 @@
-import { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../store';
-import { useParams, useNavigate } from 'react-router-dom';
-import { FaSearch, FaCaretDown, FaCaretUp } from "react-icons/fa";
-import AssignmentControlButtons from './AssignmentControlButtons';
-import { Modal, Button } from 'react-bootstrap';
-import { setAssignments, deleteAssignment } from './reducer';
-import { User } from '../../Users';
-import * as coursesClient from "../client";
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { BsGripVertical, BsPlus } from 'react-icons/bs';
+import { FaSearch, FaTrash } from 'react-icons/fa';
+import { FaPen } from 'react-icons/fa';
+import { deleteAssignment, setAssignments } from './reducer';
 import * as assignmentsClient from "./client";
+import type {Assignments} from "./AssignmentTypes";
+
+interface KanbasState {
+  assignmentsReducer: {
+    assignments: Assignments[];
+  };
+}
 
 export default function Assignments() {
-  const { cid } = useParams<{ cid: string }>();
+  const { cid } = useParams();
   const navigate = useNavigate();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(true);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
   const dispatch = useDispatch();
-
   
+  const [deleteDialog, setDeleteDialog] = useState({
+    isOpen: false,
+    assignmentId: '',
+    assignmentTitle: ''
+  });
 
-  const fetchAssignments = async () => {
-    const assignments = await coursesClient.findAssignmentsForCourse(
-      cid as string
-    );
-    dispatch(setAssignments(assignments));
-  };
-  useEffect(() => {
-    fetchAssignments();
-  }, []);
-
-  const assignments = useSelector((state: RootState) =>
-    state.assignments.assignments.filter((assignment) => assignment.course === cid)
+  const assignments = useSelector((state: KanbasState) => 
+    state.assignmentsReducer.assignments.filter(
+      assignment => assignment.course === cid
+    )
   );
-  const currentUser = useSelector((state: RootState) => state.accountReducer.currentUser) as User | null;
-  const isFaculty = currentUser?.role === "FACULTY";
+
+  useEffect(() => {
+    const fetchAssignments = async () => {
+      try {
+        const assignments = await assignmentsClient.findAssignmentsForCourse(cid as string);
+        dispatch(setAssignments(assignments));
+      } catch (error) {
+        console.error("Error fetching assignments:", error);
+      }
+    };
+    fetchAssignments();
+  }, [cid, dispatch]);
 
   const handleAddAssignment = () => {
-    if (cid) {
-      navigate(`/Kanbas/Courses/${cid}/Assignments/new`);
-    } else {
-      console.error("Course ID is undefined");
+    navigate(`/Kanbas/Courses/${cid}/Assignments/new`);
+  };
+
+  const handleDeleteClick = (assignmentId: string, title: string) => {
+    setDeleteDialog({
+      isOpen: true,
+      assignmentId,
+      assignmentTitle: title
+    });
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialog({
+      isOpen: false,
+      assignmentId: '',
+      assignmentTitle: ''
+    });
+  };
+  
+  const handleDeleteConfirm = async () => {
+    try {
+      await assignmentsClient.deleteAssignment(deleteDialog.assignmentId);
+      dispatch(deleteAssignment(deleteDialog.assignmentId));
+      setDeleteDialog({
+        isOpen: false,
+        assignmentId: '',
+        assignmentTitle: ''
+      });
+    } catch (error) {
+      console.error("Error deleting assignment:", error);
     }
   };
 
-  const toggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen);
-  };
 
-  const handleDeleteClick = (assignmentId: string) => {
-    setSelectedAssignmentId(assignmentId);
-    setShowDeleteDialog(true);
-  };
-
-  const confirmDelete = () => {
-    if (selectedAssignmentId) {
-      dispatch(deleteAssignment(selectedAssignmentId));
-    }
-    setShowDeleteDialog(false);
-    setSelectedAssignmentId(null);
-  };
-
-  const cancelDelete = () => {
-    setShowDeleteDialog(false);
-    setSelectedAssignmentId(null);
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'No due date';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center p-2 mb-3" style={{ border: '1px solid #f2f2f2' }}>
-        <div className="input-group" style={{ maxWidth: '300px' }}>
+    <div id="wd-assignments" className="container mt-4">
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <div className="input-group" style={{ width: '250px' }}>
           <span className="input-group-text bg-white">
             <FaSearch />
           </span>
-          <input type="text" className="form-control" placeholder="Search..." aria-label="Search" />
+          <input 
+            id="wd-search-assignment"
+            className="form-control"
+            placeholder="Search for Assignments" 
+          />
         </div>
-        <div className="d-flex align-items-center">
-          <button className="btn btn-light border me-2">+ Group</button>
-          {isFaculty && (
-            <button
-              className="btn"
-              style={{ backgroundColor: '#B22222', color: 'white' }}
-              onClick={handleAddAssignment}
-            >
-              + Assignment
-            </button>
-          )}
+        <div>
+          <button className="btn btn-secondary me-2">SHOW BY DATE</button>
+          <button className="btn btn-secondary">SHOW BY TYPE</button>
+          <button 
+            className="btn btn-danger ms-3"
+            onClick={handleAddAssignment}
+          >
+            <BsPlus className="me-1" /> Assignment
+          </button>
         </div>
       </div>
 
-      <div className="list-group-item p-0 mb-5 fs-5" style={{ border: '1px solid #ddd', backgroundColor: '#f1f1f1' }}>
-        <div
-          className="wd-title p-3 ps-2 d-flex align-items-center justify-content-between"
-          onClick={toggleDropdown}
-          style={{ cursor: 'pointer', color: 'black' }}
-        >
-          <div className="d-flex align-items-center">
-            {isDropdownOpen ? <FaCaretUp className="me-2" /> : <FaCaretDown className="me-2" />}
-            <span className="fw-bold">ASSIGNMENTS</span>
+      <ul id="wd-assignments-list" className="list-group rounded-0">
+        {assignments.map((assignment) => (
+          <li 
+            key={assignment._id}
+            className="wd-assignment list-group-item p-0 mb-5 fs-5 border-gray"
+            style={{ borderLeft: '5px solid green' }}
+          >
+            <div className="d-flex align-items-center">
+              <BsGripVertical className="me-2 fs-3" />
+              <div className="wd-title p-3 ps-2 bg-light flex-grow-1 fw-bold">
+                  {assignment.title}
+              </div>
+            </div>
+            <ul className="wd-assignments-list list-group rounded-0">
+              <li className="wd-assignment-item list-group-item p-3 ps-1">
+                <div className="d-flex justify-content-between">
+                <div className="d-flex flex-column">
+                  <Link
+                    to={`/Kanbas/Courses/${cid}/Assignments/${assignment._id}`}
+                    className="text-decoration-none fw-bold"
+                  >
+                    {assignment.title}
+                  </Link>
+                  {assignment.description && (
+                    <p className="text-muted mb-0">
+                      {assignment.description.substring(0, 100)}
+                      {assignment.description.length > 100 ? '...' : ''}
+                    </p>
+                  )}
+                </div>
+                  <div className="d-flex align-items-center">
+                    <div className="text-end me-3">
+                      <div className="text-muted">
+                        Due: {formatDate(assignment.dueDate || '')}
+                      </div>
+                      <div>
+                        <strong>Points:</strong> {assignment.points || 0}
+                      </div>
+                    </div>
+                    <div>
+                      <Link 
+                        to={`/Kanbas/Courses/${cid}/Assignments/${assignment._id}`}
+                        className="text-decoration-none me-2"
+                      >
+                        <FaPen className="text-primary" />
+                      </Link>
+                      <FaTrash
+                        className="text-danger"
+                        onClick={() => handleDeleteClick(assignment._id, assignment.title)}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </li>
+        ))}
+      </ul>
+
+      {deleteDialog.isOpen && (
+        <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Delete Assignment</h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={handleDeleteCancel}
+                ></button>
+              </div>
+              <div className="modal-body">
+                Are you sure you want to delete the assignment "{deleteDialog.assignmentTitle}"?
+              </div>
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={handleDeleteCancel}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-danger" 
+                  onClick={handleDeleteConfirm}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="badge bg-dark text-white" style={{ borderRadius: '20px', padding: '5px 10px' }}>40% of Total</div>
         </div>
-
-        {isDropdownOpen && (
-          <AssignmentControlButtons assignments={assignments} handleDeleteClick={isFaculty ? handleDeleteClick : undefined} />
-        )}
-      </div>
-
-      <Modal show={showDeleteDialog} onHide={cancelDelete}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Delete</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>Are you sure you want to delete this assignment?</Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={cancelDelete}>Cancel</Button>
-          <Button variant="danger" onClick={confirmDelete}>Delete</Button>
-        </Modal.Footer>
-      </Modal>
+      )}
     </div>
   );
 }
